@@ -1,0 +1,2 @@
+The dataset is downloaded automatically by main.py on first run.
+Official UCI page: https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction
