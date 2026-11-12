@@ -1,40 +1,42 @@
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from sklearn.ensemble import ExtraTreesRegressor, ExtraTreesClassifier
-from sklearn.metrics import (
-    r2_score, mean_absolute_error, accuracy_score,
-    precision_score, recall_score, f1_score, confusion_matrix
-)
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_absolute_error
 
 BASE = Path(__file__).resolve().parent
 CSV = BASE / "data" / "energydata_complete.csv"
-URL = "https://raw.githubusercontent.com/LuisM78/Appliances-energy-prediction-data/master/energydata_complete.csv"
-DB_NAME = "smart_home_energy"
-COLLECTION = "energy_readings"
+DB_NAME = "smart_home_energy_db"
+READINGS_COLLECTION = "energy_readings"
+HISTORY_COLLECTION = "prediction_history"
+
+FEATURE_COLUMNS = [
+    "lights_wh",
+    "kitchen_temp_c",
+    "kitchen_humidity",
+    "living_room_temp_c",
+    "living_room_humidity",
+    "outside_temp_c",
+    "outside_humidity"
+]
 
 
 def get_data():
     if not CSV.exists():
-        CSV.parent.mkdir(exist_ok=True)
-        print("Downloading dataset...")
-        try:
-            pd.read_csv(URL).to_csv(CSV, index=False)
-        except Exception as error:
-            print("Download failed. Put energydata_complete.csv in the data folder.")
-            print(error)
-            sys.exit(1)
+        print(f"Dataset missing at {CSV}. Please make sure energydata_complete.csv exists.")
+        sys.exit(1)
     return pd.read_csv(CSV)
 
 
-def get_collection():
+def get_db():
     load_dotenv(BASE / ".env", override=True)
-    uri = os.getenv("MONGODB_URI")
+    uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
     if not uri:
         print("MONGODB_URI missing in .env")
         sys.exit(1)
@@ -42,109 +44,105 @@ def get_collection():
         client = MongoClient(uri, serverSelectionTimeoutMS=10000)
         client.admin.command("ping")
         print("MongoDB connection successful.")
-        return client, client[DB_NAME][COLLECTION]
+        return client, client[DB_NAME]
     except Exception as error:
         print("MongoDB connection failed:", error)
         sys.exit(1)
 
 
-def save_data(collection, df):
-    if collection.count_documents({}) == 0:
-        records = df.copy()
-        records["date"] = pd.to_datetime(records["date"]).dt.strftime("%Y-%m-%d %H:%M:%S")
-        records = records.replace({np.nan: None}).to_dict("records")
-        for i in range(0, len(records), 1000):
-            collection.insert_many(records[i:i + 1000])
-        print("Inserted", len(records), "records into MongoDB.")
+def seed_database(db, df):
+    col = db[READINGS_COLLECTION]
+    if col.count_documents({}) == 0:
+        records = []
+        for _, row in df.iterrows():
+            records.append({
+                "timestamp": str(row["date"]),
+                "appliances_wh": int(row["Appliances"]),
+                "lights_wh": int(row["lights"]),
+                "kitchen_temp_c": float(row["T1"]),
+                "kitchen_humidity": float(row["RH_1"]),
+                "living_room_temp_c": float(row["T2"]),
+                "living_room_humidity": float(row["RH_2"]),
+                "outside_temp_c": float(row["T_out"]),
+                "outside_humidity": float(row["RH_out"])
+            })
+        col.insert_many(records)
+        print(f"Inserted {len(records)} records into MongoDB collection '{READINGS_COLLECTION}'.")
     else:
-        print("MongoDB already contains", collection.count_documents({}), "records.")
+        print(f"MongoDB collection '{READINGS_COLLECTION}' already contains {col.count_documents({})} records.")
 
 
 def main():
-    print("=" * 55)
-    print("SMART HOME ENERGY CONSUMPTION PREDICTION")
-    print("=" * 55)
+    print("=" * 60)
+    print("SMART HOME ENERGY PREDICTION (COLLEGE EVALUATION RUN)")
+    print("=" * 60)
 
-    df = get_data()
-    print("Dataset records:", len(df))
-    print("Missing values:", int(df.isnull().sum().sum()))
+    df_csv = get_data()
+    print("Total CSV records:", len(df_csv))
+    print("Columns (9 relevant):", list(df_csv.columns))
 
-    client, collection = get_collection()
+    client, db = get_db()
     try:
-        save_data(collection, df)
-        df = pd.DataFrame(list(collection.find({}, {"_id": 0})))
-        df["date"] = pd.to_datetime(df["date"])
-        df = df.sort_values("date").reset_index(drop=True)
+        seed_database(db, df_csv)
 
-        df["hour"] = df["date"].dt.hour
-        df["weekday"] = df["date"].dt.day_of_week
-        df["month"] = df["date"].dt.month
-        df["weekend"] = (df["weekday"] >= 5).astype(int)
-        df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-        df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-        df["lag_1"] = df["Appliances"].shift(1)
-        df["lag_3"] = df["Appliances"].shift(3)
-        df["lag_6"] = df["Appliances"].shift(6)
-        df["rolling_mean"] = df["Appliances"].shift(1).rolling(3).mean()
-        df = df.dropna().reset_index(drop=True)
+        # Retrieve records from MongoDB
+        records = list(db[READINGS_COLLECTION].find({}, {"_id": 0}))
+        df = pd.DataFrame(records)
 
-        features = [c for c in df.columns if c not in
-                    ["date", "Appliances", "rv1", "rv2"]]
-        X = df[features].astype(float)
-        y = df["Appliances"].astype(float)
+        X = df[FEATURE_COLUMNS]
+        y = df["appliances_wh"]
 
+        # 80-20 Train-Test Split (Chronological Order)
         split = int(len(df) * 0.8)
         X_train, X_test = X.iloc[:split], X.iloc[split:]
         y_train, y_test = y.iloc[:split], y.iloc[split:]
 
-        reg = ExtraTreesRegressor(
-            n_estimators=150, min_samples_leaf=2,
-            random_state=42, n_jobs=-1
-        )
-        reg.fit(X_train, y_train)
-        reg_pred = reg.predict(X_test)
+        # Single ML Model: Linear Regression
+        model = LinearRegression()
+        model.fit(X_train, y_train)
 
-        low, high = y_train.quantile([1 / 3, 2 / 3])
+        predictions = model.predict(X_test)
+        r2 = round(r2_score(y_test, predictions), 4)
+        mae = round(mean_absolute_error(y_test, predictions), 4)
 
-        def categories(values):
-            return np.where(values <= low, "Low",
-                            np.where(values <= high, "Medium", "High"))
+        # Documented threshold quantiles
+        low_threshold = float(round(y_train.quantile(0.33), 1))
+        high_threshold = float(round(y_train.quantile(0.66), 1))
 
-        y_train_class = categories(y_train.to_numpy())
-        y_test_class = categories(y_test.to_numpy())
+        print("\n--- MODEL PERFORMANCE (ACTUAL EVALUATION) ---")
+        print("Model: Linear Regression")
+        print("Training Set Size:", len(X_train))
+        print("Testing Set Size:", len(X_test))
+        print("R² Score:", r2)
+        print("Mean Absolute Error (MAE):", mae, "Wh")
+        print("\n--- CONSUMPTION THRESHOLDS ---")
+        print(f"Low Consumption: <= {low_threshold} Wh")
+        print(f"Medium Consumption: {low_threshold} to {high_threshold} Wh")
+        print(f"High Consumption: > {high_threshold} Wh")
 
-        clf = ExtraTreesClassifier(
-            n_estimators=150, min_samples_leaf=2,
-            class_weight="balanced", random_state=42, n_jobs=-1
-        )
-        clf.fit(X_train, y_train_class)
-        class_pred = clf.predict(X_test)
-
-        print("\nREGRESSION RESULTS")
-        print("R2 Score:", round(r2_score(y_test, reg_pred), 4))
-        print("MAE (Wh):", round(mean_absolute_error(y_test, reg_pred), 4))
-
-        print("\nCLASSIFICATION RESULTS")
-        print("Accuracy:", round(accuracy_score(y_test_class, class_pred), 4))
-        print("Precision:", round(precision_score(y_test_class, class_pred, average="weighted", zero_division=0), 4))
-        print("Recall:", round(recall_score(y_test_class, class_pred, average="weighted", zero_division=0), 4))
-        print("F1 Score:", round(f1_score(y_test_class, class_pred, average="weighted", zero_division=0), 4))
-        print("Confusion Matrix (Low, Medium, High):")
-        print(confusion_matrix(y_test_class, class_pred, labels=["Low", "Medium", "High"]))
-
+        # Test single sample prediction & CRUD insert
         sample = X.iloc[[-1]]
-        print("\nSAMPLE PREDICTION")
-        print("Predicted energy consumption:", round(float(reg.predict(sample)[0]), 2), "Wh")
-        print("Predicted category:", clf.predict(sample)[0])
+        sample_pred = max(0.0, round(float(model.predict(sample)[0]), 2))
+        status = "Low" if sample_pred <= low_threshold else ("Medium" if sample_pred <= high_threshold else "High")
 
-        print("\nCategory boundaries (Wh)")
-        print("Low: up to", round(float(low), 2))
-        print("Medium: up to", round(float(high), 2))
-        print("High: above", round(float(high), 2))
-        print("\nPROJECT EXECUTED SUCCESSFULLY.")
-        print("Database:", DB_NAME)
-        print("Collection:", COLLECTION)
-        print("Records:", collection.count_documents({}))
+        history_doc = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "inputs": sample.iloc[0].to_dict(),
+            "predicted_energy_wh": sample_pred,
+            "consumption_status": status,
+            "recommendations": ["Shift high load appliances to off-peak hours if High."]
+        }
+        db[HISTORY_COLLECTION].insert_one(history_doc)
+        print("\n--- SAMPLE PREDICTION & MONGODB INSERT ---")
+        print("Sample Inputs:", sample.iloc[0].to_dict())
+        print(f"Predicted Energy: {sample_pred} Wh ({status})")
+        print("Successfully stored prediction record in MongoDB 'prediction_history'.")
+        print("Total prediction history count:", db[HISTORY_COLLECTION].count_documents({}))
+
+        print("\n" + "=" * 60)
+        print("PROJECT READY. Run 'python app.py' to launch the web dashboard.")
+        print("=" * 60)
+
     finally:
         client.close()
 

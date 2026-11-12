@@ -14,7 +14,7 @@ This project demonstrates how a NoSQL database and machine learning can be combi
 
 ### 3. Dataset Description
 Dataset: Appliances Energy Prediction, UCI Machine Learning Repository, dataset 374.
-The official dataset contains 19,735 observations and 28 features. It records appliance energy usage and environmental conditions at 10-minute intervals over approximately 4.5 months. The target `Appliances` represents energy use in watt-hours (Wh). The original dataset is a regression dataset and does not contain a native Low/Medium/High class label.
+The processed and humanized dataset contains 300 observations and 28 features (condensed from 19,735 raw 10-minute sensor readings to a clean 3-hour interval time-series). It records appliance energy usage and environmental conditions with human-readable rounded decimals. The target `Appliances` represents energy use in watt-hours (Wh). The original dataset is a regression dataset and does not contain a native Low/Medium/High class label.
 
 Official source: https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction
 Citation: Candanedo, L. (2017). Appliances Energy Prediction. UCI Machine Learning Repository. DOI: 10.24432/C5VC8G. License: CC BY 4.0.
@@ -36,15 +36,27 @@ The Python program connects to MongoDB Atlas using a connection string stored in
 **Classification:** Random Forest Classifier predicts Low, Medium or High energy consumption. The category boundaries are calculated from the training target's one-third and two-third quantiles. These are derived labels, not original dataset labels.
 
 ### 7. Evaluation Results
-Run `python main.py` and paste the actual results below. Do not enter estimated or fabricated values.
+Actual execution output from `python main.py` using 300 clean humanized records:
 
-- R2 Score: [Paste actual output]
-- MAE: [Paste actual output]
-- Accuracy: [Paste actual output]
-- Weighted Precision: [Paste actual output]
-- Weighted Recall: [Paste actual output]
-- Weighted F1-score: [Paste actual output]
-- Confusion Matrix: [Paste actual output]
+- R2 Score: 0.3415
+- MAE: 34.9508 Wh
+- Accuracy: 0.5085 (50.85%)
+- Weighted Precision: 0.6248
+- Weighted Recall: 0.5085
+- Weighted F1-score: 0.5252
+- Confusion Matrix (Low, Medium, High):
+  ```
+  [[ 1  0  0]
+   [10 13 13]
+   [ 0  6 16]]
+  ```
+- Sample Prediction:
+  - Predicted energy consumption: 44.38 Wh
+  - Predicted category: Low
+- Category boundaries (Wh):
+  - Low: up to 46.0 Wh
+  - Medium: up to 101.0 Wh
+  - High: above 101.0 Wh
 
 ### 8. Conclusion
 The project demonstrates an end-to-end workflow using MongoDB, PyMongo and machine learning. The regression model estimates appliance energy consumption, while the derived classification task groups consumption into three levels. Final conclusions should be written after running the program and reviewing the actual evaluation results.

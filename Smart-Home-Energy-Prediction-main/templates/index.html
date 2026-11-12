@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Home Energy Prediction</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand-area">
+        <div class="brand-icon">
+          <!-- House SVG Icon matching screenshot -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">Smart Home</div>
+          <div class="brand-sub">Energy Prediction</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-tab="dashboard">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+          </span>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="#" class="nav-item" data-tab="predict">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </span>
+          <span>Predict Energy</span>
+        </a>
+
+        <a href="#" class="nav-item" data-tab="history">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </span>
+          <span>History</span>
+        </a>
+
+        <a href="#" class="nav-item" data-tab="performance">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </span>
+          <span>Model Performance</span>
+        </a>
+
+        <a href="#" class="nav-item" data-tab="about">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </span>
+          <span>About</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Dynamic Content Workspace -->
+    <main class="main-content">
+
+      <!-- ================= 1. DASHBOARD TAB ================= -->
+      <section id="view-dashboard" class="view-panel active">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>Dashboard</h2>
+            <p>Overview of home energy consumption and predictions</p>
+          </div>
+          <!-- Eco Home Graphic Badge -->
+          <div class="home-illustration-badge">
+            🏡☀️
+          </div>
+        </div>
+
+        <!-- 4 Stat Summary Cards -->
+        <div class="stats-cards-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrap green-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="dash-total-readings">3,000</div>
+              <div class="stat-label">Total Readings</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap blue-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="dash-avg-consumption">98.42 Wh</div>
+              <div class="stat-label">Average Consumption</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap purple-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="dash-latest-pred">110.57 Wh</div>
+              <div class="stat-label">Latest Prediction</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrap green-dark-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="dash-latest-cat">Medium</div>
+              <div class="stat-label">Usage Category</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column: Trend Chart & Quick Insight -->
+        <div class="dash-bottom-grid">
+          <!-- Recent Energy Consumption Line Chart -->
+          <div class="white-card chart-card">
+            <h3 class="card-title">Recent Energy Consumption</h3>
+            <div class="chart-wrapper">
+              <canvas id="trendChart" width="520" height="230"></canvas>
+            </div>
+          </div>
+
+          <!-- Quick Insight Card -->
+          <div class="white-card insight-card">
+            <div class="insight-header">
+              <span class="insight-pin">💡</span>
+              <h3 class="card-title">Quick Insight</h3>
+            </div>
+            <p class="insight-text" id="dash-insight-text">
+              Your current energy usage is <strong id="insight-cat-name">Medium</strong>. Try to reduce unnecessary appliance usage to save electricity.
+            </p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 2. PREDICT ENERGY FORM ================= -->
+      <section id="view-predict" class="view-panel">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>Predict Energy Consumption</h2>
+            <p>Enter home environment details to estimate appliance energy usage.</p>
+          </div>
+        </div>
+
+        <div class="white-card form-box-card">
+          <form id="prediction-form">
+            <div class="form-columns-2">
+              <!-- Left Column Inputs -->
+              <div class="form-col">
+                <div class="form-field">
+                  <label for="inp-lights">Lighting Energy (light) (Wh)</label>
+                  <input type="number" id="inp-lights" name="lights_wh" value="20" step="1" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="inp-t1">Kitchen Temperature (T1) (&deg;C)</label>
+                  <input type="number" id="inp-t1" name="kitchen_temp_c" value="21.5" step="0.1" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="inp-rh1">Kitchen Humidity (RH_1) (%)</label>
+                  <input type="number" id="inp-rh1" name="kitchen_humidity" value="40.0" step="0.1" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="inp-t2">Living Room Temperature (T2) (&deg;C)</label>
+                  <input type="number" id="inp-t2" name="living_room_temp_c" value="20.0" step="0.1" required>
+                </div>
+              </div>
+
+              <!-- Right Column Inputs -->
+              <div class="form-col">
+                <div class="form-field">
+                  <label for="inp-rh2">Living Room Humidity (RH_2) (%)</label>
+                  <input type="number" id="inp-rh2" name="living_room_humidity" value="38.0" step="0.1" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="inp-tout">Outdoor Temperature (T_out) (&deg;C)</label>
+                  <input type="number" id="inp-tout" name="outside_temp_c" value="8.5" step="0.1" required>
+                </div>
+
+                <div class="form-field">
+                  <label for="inp-rhout">Outdoor Humidity (RH_out) (%)</label>
+                  <input type="number" id="inp-rhout" name="outside_humidity" value="85.0" step="0.1" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Full Width Predict Button -->
+            <div class="form-submit-row">
+              <button type="submit" class="btn btn-green-submit">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>Predict Energy</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+
+      <!-- ================= 3. PREDICTION RESULT VIEW ================= -->
+      <section id="view-result" class="view-panel">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>Prediction Result</h2>
+            <p>Estimated appliance energy consumption and recommendation.</p>
+          </div>
+        </div>
+
+        <!-- 2 Top Result Cards -->
+        <div class="result-top-grid">
+          <!-- Predicted Wh Banner -->
+          <div class="white-card result-val-card">
+            <div class="result-icon-val green-icon">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#16a34a" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div class="result-texts">
+              <div class="result-head-label">Predicted Energy Consumption</div>
+              <div class="result-big-number"><span id="res-energy-val">110.57</span> Wh</div>
+            </div>
+          </div>
+
+          <!-- Usage Category Card -->
+          <div class="white-card result-cat-card">
+            <div class="result-icon-val yellow-icon">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#d97706" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="result-texts">
+              <div class="result-head-label">Usage Category</div>
+              <div class="result-category-label text-cat-medium" id="res-cat-val">Medium</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommendation Box with House Graphic -->
+        <div class="white-card rec-card">
+          <div class="rec-content">
+            <div class="rec-title">
+              <span class="leaf-icon">🌱</span>
+              <h3>Energy-Saving Recommendation</h3>
+            </div>
+            <ul class="rec-bullets" id="res-rec-list">
+              <li>Monitor your appliance usage and avoid unnecessary lighting.</li>
+              <li>Use energy-efficient appliances wherever possible.</li>
+              <li>Switch off appliances when not in use.</li>
+            </ul>
+          </div>
+          <div class="rec-graphic">
+            🏡🌱
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="result-actions">
+          <button class="btn btn-outline-nav" id="btn-predict-again">
+            &larr; Predict Again
+          </button>
+          <button class="btn btn-green-submit" id="btn-view-history">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <span>View History</span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ================= 4. PREDICTION HISTORY TABLE ================= -->
+      <section id="view-history" class="view-panel">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>Prediction History</h2>
+            <p>Previously predicted energy consumption records.</p>
+          </div>
+          <!-- Search box matching screenshot -->
+          <div class="history-search-box">
+            <span class="search-glass">🔍</span>
+            <input type="text" id="history-search-input" placeholder="Search history...">
+          </div>
+        </div>
+
+        <div class="white-card table-card">
+          <div class="table-responsive">
+            <table class="green-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date & Time</th>
+                  <th>Lights</th>
+                  <th>T1 (&deg;C)</th>
+                  <th>RH_1 (%)</th>
+                  <th>T2 (&deg;C)</th>
+                  <th>RH_2 (%)</th>
+                  <th>T_out (&deg;C)</th>
+                  <th>RH_out (%)</th>
+                  <th>Predicted (Wh)</th>
+                  <th>Category</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar matching screenshot -->
+          <div class="pagination-bar">
+            <div class="page-info" id="pagination-info">Showing 1 to 5 of 15 records</div>
+            <div class="page-controls" id="pagination-controls">
+              <!-- Dynamically populated page buttons -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 5. MODEL PERFORMANCE TAB ================= -->
+      <section id="view-performance" class="view-panel">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>Model Performance</h2>
+            <p>Evaluation results of the Linear Regression model.</p>
+          </div>
+        </div>
+
+        <!-- 2 Top Metric Score Cards -->
+        <div class="perf-top-grid">
+          <div class="white-card perf-card">
+            <div class="perf-icon purple-bg">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#8b5cf6" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="perf-texts">
+              <div class="perf-label">R&sup2; Score</div>
+              <div class="perf-val purple-text" id="perf-r2-val">0.3424</div>
+            </div>
+          </div>
+
+          <div class="white-card perf-card">
+            <div class="perf-icon green-bg">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+            </div>
+            <div class="perf-texts">
+              <div class="perf-label">MAE</div>
+              <div class="perf-val green-text" id="perf-mae-val">48.00 Wh</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scatter Plot & Details Table -->
+        <div class="perf-bottom-grid">
+          <!-- Actual vs Predicted Scatter Canvas -->
+          <div class="white-card perf-chart-box">
+            <h3 class="card-title">Actual vs Predicted Energy Consumption</h3>
+            <div class="chart-wrapper">
+              <canvas id="actualVsPredChart" width="500" height="280"></canvas>
+            </div>
+          </div>
+
+          <!-- Model Details Specs Card -->
+          <div class="white-card perf-details-box">
+            <h3 class="card-title">Model Details</h3>
+            <table class="specs-table">
+              <tbody>
+                <tr>
+                  <td class="spec-name">Algorithm</td>
+                  <td class="spec-val">Linear Regression</td>
+                </tr>
+                <tr>
+                  <td class="spec-name">Training Data</td>
+                  <td class="spec-val" id="spec-train-size">2,400 records (80%)</td>
+                </tr>
+                <tr>
+                  <td class="spec-name">Testing Data</td>
+                  <td class="spec-val" id="spec-test-size">600 records (20%)</td>
+                </tr>
+                <tr>
+                  <td class="spec-name">R&sup2; Score</td>
+                  <td class="spec-val" id="spec-r2">0.3424</td>
+                </tr>
+                <tr>
+                  <td class="spec-name">MAE</td>
+                  <td class="spec-val" id="spec-mae">48.00 Wh</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 6. ABOUT THE PROJECT TAB ================= -->
+      <section id="view-about" class="view-panel">
+        <div class="panel-header">
+          <div class="header-titles">
+            <h2>About the Project</h2>
+            <p>Learn more about Smart Home Energy Prediction.</p>
+          </div>
+        </div>
+
+        <!-- Hero Intro Card with House Illustration -->
+        <div class="white-card about-hero-card">
+          <div class="about-hero-graphic">
+            🏡🔋🌿
+          </div>
+          <div class="about-hero-text">
+            <h3>Smart Home Energy Prediction</h3>
+            <p>
+              A machine learning based web application that predicts household appliance energy consumption using environmental conditions such as temperature, humidity and lighting. The project helps users understand their energy usage and provides simple suggestions to reduce electricity consumption.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3 Feature Tech Columns -->
+        <div class="about-features-grid">
+          <div class="white-card feature-tile">
+            <div class="feature-head">
+              <span class="feat-icon">⚙️</span>
+              <h4>Technology Stack</h4>
+            </div>
+            <p>HTML, CSS, JavaScript, Python (Flask), MongoDB (PyMongo), Scikit-learn</p>
+          </div>
+
+          <div class="white-card feature-tile">
+            <div class="feature-head">
+              <span class="feat-icon">📊</span>
+              <h4>Dataset</h4>
+            </div>
+            <p>Appliances Energy Prediction (UCI Repository)<br>3,000 records, 9 columns</p>
+          </div>
+
+          <div class="white-card feature-tile">
+            <div class="feature-head">
+              <span class="feat-icon">🎯</span>
+              <h4>ML Model</h4>
+            </div>
+            <p>Linear Regression<br>Evaluation: R&sup2; Score, MAE</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
